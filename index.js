@@ -5,6 +5,8 @@ import mongoose from 'mongoose';
 import { validationResult } from 'express-validator';
 import { registerValidation } from './validations/auth.js';
 import UserModel from './models/User.js';
+import checkAuth from './utils/checkAuth.js';
+import * as UserController from './controllers/UserController.js'
 
 mongoose
   .connect(
@@ -17,27 +19,11 @@ const app = express();
 
 app.use(express.json());
 
-app.post('/auth/register', registerValidation, async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json(errors.array());
-  }
+app.post('/auth/login', UserController.login);
 
-  const password = req.body.password;
-  const salt = await bcrypt.genSalt(10);
-  const passwordHash = await bcrypt.hash(password, salt);
+app.post('/auth/register', registerValidation, UserController.register);
 
-  const doc = new UserModel({
-    email: req.body.email,
-    passwordHash,
-    fullName: req.body.fullName,
-    avatarUrl: req.body.avatarUrl
-  });
-
-  const user = await doc.save();
-
-  res.json(user);
-});
+app.get('/auth/me',checkAuth, UserController.getMe)
 
 app.listen(4444, (err) => {
   if (err) {
